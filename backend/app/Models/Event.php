@@ -21,12 +21,14 @@ class Event extends Model
         'invitation_subject',
         'invitation_body',
         'reminder_days',
+        'rsvp_deadline',
     ];
 
     protected function casts(): array
     {
         return [
             'date' => 'date',
+            'rsvp_deadline' => 'date',
         ];
     }
 

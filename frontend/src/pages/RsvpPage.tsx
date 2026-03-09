@@ -4,7 +4,7 @@ import { api } from '../api'
 
 interface RsvpData {
   guest: { name: string; status: string; attendees_count?: number | null; rsvp_message?: string | null }
-  event: { title: string; description: string | null; location: string | null; date: string; time: string }
+  event: { title: string; description: string | null; location: string | null; date: string; time: string; rsvp_deadline?: string | null }
 }
 
 export default function RsvpPage() {
@@ -75,8 +75,9 @@ export default function RsvpPage() {
             }
           : null,
       )
-    } catch {
-      setError('Une erreur est survenue')
+    } catch (err: unknown) {
+      const ax = err as { response?: { status?: number; data?: { message?: string } } }
+      setError(ax.response?.data?.message ?? 'Une erreur est survenue')
     } finally {
       setSubmitting(false)
     }
@@ -101,6 +102,15 @@ export default function RsvpPage() {
   }
 
   const { event, guest } = data
+  const deadline = event.rsvp_deadline ? new Date(event.rsvp_deadline + 'T23:59:59') : null
+  const isPastDeadline = deadline !== null && new Date() > deadline
+
+  const apiBase = api.defaults.baseURL ?? ''
+  const icsUrl = token ? `${apiBase}/rsvp/${token}/calendar` : ''
+  const startDate = new Date(event.date + 'T' + event.time)
+  const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000)
+  const formatGoogleDate = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z'
+  const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}&details=${encodeURIComponent(event.description || '')}&location=${encodeURIComponent(event.location || '')}`
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -114,9 +124,24 @@ export default function RsvpPage() {
             <h2 className="font-semibold text-slate-900">{event.title}</h2>
             {event.location && <p className="text-slate-600 text-sm">{event.location}</p>}
             <p className="text-slate-600 text-sm mt-1">{new Date(event.date).toLocaleDateString('fr-FR')} à {event.time}</p>
+            {event.rsvp_deadline && !isPastDeadline && (
+              <p className="text-amber-600 text-sm mt-1">Répondez avant le {new Date(event.rsvp_deadline).toLocaleDateString('fr-FR')}</p>
+            )}
             {event.description && <p className="text-slate-600 text-sm mt-2">{event.description}</p>}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <a href={icsUrl} download="invitation.ics" className="text-sm text-primary-600 hover:underline">
+                📅 Télécharger .ics
+              </a>
+              <a href={googleCalendarUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary-600 hover:underline">
+                Google Calendar
+              </a>
+            </div>
           </div>
-          {responded ? (
+          {isPastDeadline && !responded ? (
+            <p className="text-amber-700 font-medium bg-amber-50 p-3 rounded-lg">
+              La date limite de réponse est dépassée. Vous ne pouvez plus modifier votre réponse.
+            </p>
+          ) : responded ? (
             <p className="text-emerald-600 font-medium">
               Merci pour votre réponse.
               {guest.status === 'confirmed' && " Nous avons hâte de vous voir !"}

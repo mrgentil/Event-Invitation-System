@@ -34,6 +34,13 @@ export interface User {
   id: number
   name: string
   email: string
+  preferences?: UserPreferences | null
+}
+
+export interface UserPreferences {
+  language?: 'fr' | 'en'
+  notifications_email_reminders?: boolean
+  notifications_new_rsvp?: boolean
 }
 
 export interface Event {
@@ -47,9 +54,11 @@ export interface Event {
   guests_count?: number
   guests?: Guest[]
   guest_status_counts?: { pending: number; confirmed: number; declined: number }
+  total_attendees?: number
   invitation_subject?: string | null
   invitation_body?: string | null
   reminder_days?: number | null
+  rsvp_deadline?: string | null
   created_at: string
   updated_at: string
 }
@@ -62,11 +71,12 @@ export interface Guest {
   status?: 'pending' | 'confirmed' | 'declined'
   attendees_count?: number | null
   rsvp_message?: string | null
+  rsvp_token?: string
 }
 
 export interface RsvpInvitation {
   guest: { name: string; status: string; attendees_count?: number | null; rsvp_message?: string | null }
-  event: { title: string; description: string | null; location: string | null; date: string; time: string }
+  event: { title: string; description: string | null; location: string | null; date: string; time: string; rsvp_deadline?: string | null }
 }
 
 export interface EventsPaginationMeta {
@@ -97,7 +107,7 @@ export const authApi = {
   resetPassword: (data: { email: string; token: string; password: string; password_confirmation: string }) =>
     api.post<{ message: string }>('/reset-password', data),
   getProfile: () => api.get<{ data: User }>('/user'),
-  updateProfile: (data: { name?: string; email?: string; password?: string; password_confirmation?: string }) =>
+  updateProfile: (data: { name?: string; email?: string; password?: string; password_confirmation?: string; preferences?: UserPreferences }) =>
     api.put<{ data: User }>('/user', data),
   deleteAccount: () => api.delete('/user'),
 }
@@ -115,6 +125,18 @@ export const eventsApi = {
   delete: (id: number) => api.delete(`/events/${id}`),
   duplicate: (id: number, params?: { date_offset_days?: number; copy_guests?: boolean }) =>
     api.post<{ data: Event }>(`/events/${id}/duplicate`, params ?? {}),
+  getEmailLogs: (eventId: number) =>
+    api.get<{ data: EmailLogEntry[] }>(`/events/${eventId}/email-logs`),
+}
+
+export interface EmailLogEntry {
+  id: number
+  type: string
+  email: string
+  guest_name?: string
+  sent_at: string
+  status: string
+  error_message?: string | null
 }
 
 export const guestsApi = {
@@ -146,6 +168,7 @@ export const rsvpApi = {
 export interface DashboardStats {
   total_events: number
   total_guests: number
+  total_attendees: number
   upcoming_events: number
   events_per_month: Record<string, number>
   top_events_by_guests: { title: string; guests_count: number }[]
@@ -153,4 +176,20 @@ export interface DashboardStats {
 
 export const dashboardApi = {
   getStats: () => api.get<{ data: DashboardStats }>('/dashboard/stats'),
+}
+
+export interface EmailLogEntryGlobal {
+  id: number
+  type: string
+  email: string
+  guest_name?: string
+  event_title?: string
+  sent_at: string
+  status: string
+  error_message?: string | null
+}
+
+export const emailLogsApi = {
+  list: (params?: { page?: number; per_page?: number }) =>
+    api.get<{ data: EmailLogEntryGlobal[]; meta: EventsPaginationMeta }>('/email-logs', { params }),
 }

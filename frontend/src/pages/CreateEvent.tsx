@@ -13,6 +13,7 @@ export default function CreateEvent() {
   const [invitationSubject, setInvitationSubject] = useState('')
   const [invitationBody, setInvitationBody] = useState('')
   const [reminderDays, setReminderDays] = useState<number | ''>('')
+  const [rsvpDeadline, setRsvpDeadline] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -45,6 +46,7 @@ export default function CreateEvent() {
       if (invitationSubject) formData.append('invitation_subject', invitationSubject)
       if (invitationBody) formData.append('invitation_body', invitationBody)
       if (reminderDays !== '') formData.append('reminder_days', String(reminderDays))
+      if (rsvpDeadline) formData.append('rsvp_deadline', rsvpDeadline)
       formData.append('guests_file', file)
       await eventsApi.create(formData)
       toast.success('Événement créé et invitations envoyées')
@@ -108,6 +110,11 @@ export default function CreateEvent() {
             <div className="form-group">
               <label htmlFor="reminder_days" className="form-label form-label-optional">Rappel automatique (jours avant)</label>
               <input id="reminder_days" type="number" min={1} max={365} value={reminderDays} onChange={(e) => setReminderDays(e.target.value === '' ? '' : parseInt(e.target.value, 10))} className="form-input" placeholder="Ex. 3" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="rsvp_deadline" className="form-label form-label-optional">Date limite de réponse</label>
+              <input id="rsvp_deadline" type="date" value={rsvpDeadline} onChange={(e) => setRsvpDeadline(e.target.value)} className="form-input" min={date || undefined} placeholder="Optionnel" />
+              <p className="form-hint mt-1">Après cette date, les invités ne pourront plus modifier leur réponse.</p>
             </div>
           </div>
 

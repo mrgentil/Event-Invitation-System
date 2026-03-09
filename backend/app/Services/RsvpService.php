@@ -37,6 +37,7 @@ class RsvpService
                 'location' => $event->location,
                 'date' => $event->date->format('Y-m-d'),
                 'time' => $event->time,
+                'rsvp_deadline' => $event->rsvp_deadline?->format('Y-m-d'),
             ],
         ];
     }

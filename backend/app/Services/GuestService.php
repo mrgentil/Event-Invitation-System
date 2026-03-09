@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\Repositories\GuestRepositoryInterface;
 use App\Mail\InvitationMail;
+use App\Models\EmailLog;
 use App\Models\Event;
 use App\Models\Guest;
 use Illuminate\Http\UploadedFile;
@@ -22,7 +23,13 @@ class GuestService
         $guest = $this->guestRepository->createForEvent($event->id, $name, $email);
 
         if ($sendInvitation) {
-            Mail::to($guest->email)->send(new InvitationMail($event, $guest));
+            try {
+                Mail::to($guest->email)->send(new InvitationMail($event, $guest));
+                EmailLog::recordSent(EmailLog::TYPE_INVITATION, $guest->email, ['event_id' => $event->id, 'guest_id' => $guest->id]);
+            } catch (\Throwable $e) {
+                EmailLog::recordFailed(EmailLog::TYPE_INVITATION, $guest->email, $e->getMessage(), ['event_id' => $event->id, 'guest_id' => $guest->id]);
+                throw $e;
+            }
         }
 
         return $guest;
@@ -52,7 +59,13 @@ class GuestService
     public function sendInvitationsToGuests(Event $event, array $guests): void
     {
         foreach ($guests as $guest) {
-            Mail::to($guest->email)->send(new InvitationMail($event, $guest));
+            try {
+                Mail::to($guest->email)->send(new InvitationMail($event, $guest));
+                EmailLog::recordSent(EmailLog::TYPE_INVITATION, $guest->email, ['event_id' => $event->id, 'guest_id' => $guest->id]);
+            } catch (\Throwable $e) {
+                EmailLog::recordFailed(EmailLog::TYPE_INVITATION, $guest->email, $e->getMessage(), ['event_id' => $event->id, 'guest_id' => $guest->id]);
+                throw $e;
+            }
         }
     }
 
@@ -85,8 +98,13 @@ class GuestService
 
         $count = 0;
         foreach ($guests as $guest) {
-            Mail::to($guest->email)->send(new InvitationMail($event, $guest));
-            $count++;
+            try {
+                Mail::to($guest->email)->send(new InvitationMail($event, $guest));
+                EmailLog::recordSent(EmailLog::TYPE_INVITATION, $guest->email, ['event_id' => $event->id, 'guest_id' => $guest->id]);
+                $count++;
+            } catch (\Throwable $e) {
+                EmailLog::recordFailed(EmailLog::TYPE_INVITATION, $guest->email, $e->getMessage(), ['event_id' => $event->id, 'guest_id' => $guest->id]);
+            }
         }
 
         return $count;

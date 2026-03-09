@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import toast from 'react-hot-toast'
-import { eventsApi, guestsApi, type Event, type Guest } from '../api'
+import { eventsApi, guestsApi, type Event, type Guest, type EmailLogEntry } from '../api'
 
 const statusLabel: Record<string, string> = {
   pending: 'En attente',
   confirmed: 'Oui',
   declined: 'Non',
+}
+
+const emailLogTypeLabel: Record<string, string> = {
+  invitation: 'Invitation',
+  reminder: 'Rappel',
+  event_created: 'Événement créé',
 }
 
 export default function EventDetail() {
@@ -28,6 +35,9 @@ export default function EventDetail() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
+  const [qrGuestId, setQrGuestId] = useState<number | null>(null)
+  const [emailLogs, setEmailLogs] = useState<EmailLogEntry[]>([])
+  const [emailLogsOpen, setEmailLogsOpen] = useState(false)
 
   function loadEvent() {
     if (!id) return
@@ -42,6 +52,12 @@ export default function EventDetail() {
   useEffect(() => {
     loadEvent()
   }, [id])
+
+  useEffect(() => {
+    if (event?.id && emailLogsOpen) {
+      eventsApi.getEmailLogs(event.id).then((res) => setEmailLogs(res.data.data ?? [])).catch(() => setEmailLogs([]))
+    }
+  }, [event?.id, emailLogsOpen])
 
   async function handleDelete() {
     if (!event) return
@@ -212,6 +228,9 @@ export default function EventDetail() {
               <span className="text-green-600 font-medium">{counts.confirmed} Oui</span>
               <span className="text-red-600 font-medium">{counts.declined} Non</span>
               <span className="text-slate-500">{counts.pending} En attente</span>
+              {(event.total_attendees ?? 0) > 0 && (
+                <span className="text-primary-600 font-medium">{event.total_attendees} personne(s) attendue(s)</span>
+              )}
             </div>
           )}
         </div>
@@ -277,6 +296,11 @@ export default function EventDetail() {
                         </span>
                       </div>
                       <div className="flex gap-1">
+                        {g.rsvp_token && (
+                          <button type="button" onClick={() => setQrGuestId(g.id)} className="btn btn-ghost btn-sm" title="Afficher le QR code d'invitation">
+                            QR
+                          </button>
+                        )}
                         <button type="button" onClick={() => startEdit(g)} className="btn btn-ghost btn-sm">Modifier</button>
                         <button type="button" onClick={() => deleteGuest(g.id)} className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50">Supprimer</button>
                       </div>
@@ -286,8 +310,50 @@ export default function EventDetail() {
               ))}
             </ul>
           )}
+
+          <div className="border-t border-slate-200 pt-4 mt-4">
+            <button type="button" onClick={() => setEmailLogsOpen((v) => !v)} className="text-sm font-medium text-slate-600 hover:text-primary-600">
+              {emailLogsOpen ? 'Masquer' : 'Voir'} l'historique des emails
+            </button>
+            {emailLogsOpen && (
+              <div className="mt-3 overflow-x-auto">
+                {emailLogs.length === 0 ? (
+                  <p className="text-slate-500 text-sm">Aucun envoi enregistré.</p>
+                ) : (
+                  <ul className="divide-y divide-slate-100 text-sm">
+                    {emailLogs.map((log) => (
+                      <li key={log.id} className="py-2 flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-slate-700">{emailLogTypeLabel[log.type] ?? log.type}</span>
+                        <span className="text-slate-600">{log.email}</span>
+                        {log.guest_name && <span className="text-slate-500">({log.guest_name})</span>}
+                        <span className="text-slate-400">{new Date(log.sent_at).toLocaleString('fr-FR')}</span>
+                        {log.status === 'failed' && <span className="text-red-600 text-xs" title={log.error_message ?? ''}>Échec</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {qrGuestId !== null && (() => {
+        const g = guests.find((x) => x.id === qrGuestId)
+        const rsvpUrl = g?.rsvp_token ? `${window.location.origin}/rsvp/${g.rsvp_token}` : ''
+        return g && rsvpUrl ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" onClick={() => setQrGuestId(null)}>
+            <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full text-center" onClick={(e) => e.stopPropagation()}>
+              <h3 className="font-semibold text-slate-900 mb-2">QR code – {g.name}</h3>
+              <div className="flex justify-center p-4 bg-white rounded-lg border border-slate-200">
+                <QRCodeSVG value={rsvpUrl} size={200} level="M" />
+              </div>
+              <p className="text-xs text-slate-500 mt-2 break-all">{rsvpUrl}</p>
+              <button type="button" onClick={() => setQrGuestId(null)} className="btn btn-secondary btn-sm mt-4">Fermer</button>
+            </div>
+          </div>
+        ) : null
+      })()}
     </div>
   )
 }

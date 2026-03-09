@@ -4,7 +4,10 @@ import { useAuth } from '../contexts/AuthContext'
 const navItems = [
   { to: '/dashboard', label: 'Tableau de bord', icon: '📊' },
   { to: '/events', label: 'Événements', icon: '📅' },
-  { to: '/events/create', label: 'Créer un événement', icon: '➕' },
+  { to: '/email-history', label: 'Historique des emails', icon: '✉️' },
+  { to: '/profile', label: 'Profil', icon: '👤' },
+  { to: '/settings', label: 'Paramètres', icon: '⚙️' },
+  { to: '/privacy', label: 'Confidentialité', icon: '🔒' },
 ]
 
 export default function Layout() {
@@ -38,15 +41,12 @@ export default function Layout() {
           </ul>
         </nav>
         <div className="p-3 border-t border-slate-700">
-          <NavLink
-            to="/profile"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white font-medium"
-          >
-            <span className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-sm font-semibold">
+          <div className="flex items-center gap-3 px-3 py-2.5 text-slate-400 text-sm">
+            <span className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center font-semibold">
               {user?.name?.charAt(0).toUpperCase() ?? '?'}
             </span>
             <span className="truncate">{user?.name}</span>
-          </NavLink>
+          </div>
           <button
             onClick={() => logout()}
             className="w-full mt-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white text-sm"

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreEventRequest;
 use App\Http\Requests\Api\UpdateEventRequest;
 use App\Models\Event;
+use App\Models\EmailLog;
 use App\Services\EventService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -67,7 +68,14 @@ class EventController extends Controller
             'declined' => $event->guests->where('status', 'declined')->count(),
         ];
 
-        return $this->success(array_merge($event->toArray(), ['guest_status_counts' => $guestStatusCounts]));
+        $totalAttendees = $event->guests
+            ->where('status', 'confirmed')
+            ->sum(fn ($g) => max(1, (int) ($g->attendees_count ?? 1)));
+
+        return $this->success(array_merge($event->toArray(), [
+            'guest_status_counts' => $guestStatusCounts,
+            'total_attendees' => $totalAttendees,
+        ]));
     }
 
     public function update(UpdateEventRequest $request, Event $event): JsonResponse
@@ -100,5 +108,28 @@ class EventController extends Controller
         $newEvent = $this->eventService->duplicateEvent($request->user(), $event, $offsetDays, $copyGuests);
 
         return $this->created($newEvent, 'Événement dupliqué.');
+    }
+
+    public function emailLogs(Event $event): JsonResponse
+    {
+        $this->authorize('view', $event);
+
+        $logs = EmailLog::query()
+            ->where('event_id', $event->id)
+            ->with('guest:id,name,email')
+            ->orderByDesc('sent_at')
+            ->limit(100)
+            ->get()
+            ->map(fn ($log) => [
+                'id' => $log->id,
+                'type' => $log->type,
+                'email' => $log->email,
+                'guest_name' => $log->guest?->name,
+                'sent_at' => $log->sent_at->toIso8601String(),
+                'status' => $log->status,
+                'error_message' => $log->error_message,
+            ]);
+
+        return $this->success($logs->all());
     }
 }

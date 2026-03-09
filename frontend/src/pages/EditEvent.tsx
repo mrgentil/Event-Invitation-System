@@ -15,6 +15,7 @@ export default function EditEvent() {
   const [invitationSubject, setInvitationSubject] = useState('')
   const [invitationBody, setInvitationBody] = useState('')
   const [reminderDays, setReminderDays] = useState<number | ''>('')
+  const [rsvpDeadline, setRsvpDeadline] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetchLoading, setFetchLoading] = useState(true)
@@ -34,6 +35,7 @@ export default function EditEvent() {
         setInvitationSubject(e.invitation_subject ?? '')
         setInvitationBody(e.invitation_body ?? '')
         setReminderDays(e.reminder_days ?? '')
+        setRsvpDeadline(e.rsvp_deadline ? e.rsvp_deadline.slice(0, 10) : '')
       })
       .catch(() => setError('Événement introuvable'))
       .finally(() => setFetchLoading(false))
@@ -59,6 +61,7 @@ export default function EditEvent() {
         invitation_subject: invitationSubject || undefined,
         invitation_body: invitationBody || undefined,
         reminder_days: reminderDays === '' ? undefined : Number(reminderDays),
+        rsvp_deadline: rsvpDeadline || undefined,
       })
       toast.success('Événement mis à jour')
       navigate(`/events/${event.id}`)
@@ -135,6 +138,10 @@ export default function EditEvent() {
             <div className="form-group">
               <label htmlFor="reminder_days" className="form-label form-label-optional">Rappel (jours avant)</label>
               <input id="reminder_days" type="number" min={1} max={365} value={reminderDays} onChange={(e) => setReminderDays(e.target.value === '' ? '' : parseInt(e.target.value, 10))} className="form-input" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="rsvp_deadline" className="form-label form-label-optional">Date limite de réponse</label>
+              <input id="rsvp_deadline" type="date" value={rsvpDeadline} onChange={(e) => setRsvpDeadline(e.target.value)} className="form-input" min={date || undefined} />
             </div>
           </div>
           <div className="pt-4 border-t border-slate-200">

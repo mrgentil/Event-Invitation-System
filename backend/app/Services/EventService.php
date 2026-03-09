@@ -6,12 +6,14 @@ use App\Contracts\Repositories\EventRepositoryInterface;
 use App\Contracts\Repositories\GuestRepositoryInterface;
 use App\Mail\EventCreatedMail;
 use App\Mail\InvitationMail;
+use App\Models\EmailLog;
 use App\Models\Event;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class EventService
@@ -53,7 +55,13 @@ class EventService
         $this->sendInvitations($event, $guests);
         $event->load('guests');
 
-        Mail::to($user->email)->send(new EventCreatedMail($event, count($guests)));
+        try {
+            Mail::to($user->email)->send(new EventCreatedMail($event, count($guests)));
+            EmailLog::recordSent(EmailLog::TYPE_EVENT_CREATED, $user->email, ['event_id' => $event->id]);
+        } catch (\Throwable $e) {
+            EmailLog::recordFailed(EmailLog::TYPE_EVENT_CREATED, $user->email, $e->getMessage(), ['event_id' => $event->id]);
+            throw $e;
+        }
 
         return $event;
     }
@@ -76,7 +84,7 @@ class EventService
         $newDate = Carbon::parse($event->date)->addDays($dateOffsetDays);
 
         $data = $event->only([
-            'title', 'description', 'location', 'invitation_subject', 'invitation_body', 'reminder_days',
+            'title', 'description', 'location', 'invitation_subject', 'invitation_body', 'reminder_days', 'rsvp_deadline',
         ]);
         $data['title'] = $event->title . ' (copie)';
         $data['date'] = $newDate->format('Y-m-d');
@@ -94,13 +102,20 @@ class EventService
     }
 
     /**
-     * @return array{total_events: int, total_guests: int, upcoming_events: int, events_per_month: array<int, int>, top_events_by_guests: array<int, array{title: string, guests_count: int}>}
+     * @return array{total_events: int, total_guests: int, total_attendees: int, upcoming_events: int, events_per_month: array<int, int>, top_events_by_guests: array<int, array{title: string, guests_count: int}>}
      */
     public function getDashboardStats(User $user): array
     {
         $events = $this->eventRepository->getForUser($user);
+        $eventIds = $events->pluck('id')->all();
         $totalEvents = $events->count();
         $totalGuests = $events->sum(fn (Event $e) => $e->guests_count ?? $e->guests->count());
+        $totalAttendees = empty($eventIds)
+            ? 0
+            : (int) DB::table('guests')
+                ->whereIn('event_id', $eventIds)
+                ->where('status', 'confirmed')
+                ->sum(DB::raw('COALESCE(attendees_count, 1)'));
         $today = Carbon::today();
         $upcomingEvents = $events->filter(fn (Event $e) => Carbon::parse($e->date)->gte($today))->count();
 
@@ -127,6 +142,7 @@ class EventService
         return [
             'total_events' => $totalEvents,
             'total_guests' => $totalGuests,
+            'total_attendees' => $totalAttendees,
             'upcoming_events' => $upcomingEvents,
             'events_per_month' => $eventsPerMonth,
             'top_events_by_guests' => array_values($topEventsByGuests),
@@ -139,7 +155,13 @@ class EventService
     private function sendInvitations(Event $event, array $guests): void
     {
         foreach ($guests as $guest) {
-            Mail::to($guest->email)->send(new InvitationMail($event, $guest));
+            try {
+                Mail::to($guest->email)->send(new InvitationMail($event, $guest));
+                EmailLog::recordSent(EmailLog::TYPE_INVITATION, $guest->email, ['event_id' => $event->id, 'guest_id' => $guest->id]);
+            } catch (\Throwable $e) {
+                EmailLog::recordFailed(EmailLog::TYPE_INVITATION, $guest->email, $e->getMessage(), ['event_id' => $event->id, 'guest_id' => $guest->id]);
+                throw $e;
+            }
         }
     }
 }

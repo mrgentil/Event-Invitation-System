@@ -25,6 +25,7 @@ class UpdateEventRequest extends FormRequest
             'invitation_subject' => ['nullable', 'string', 'max:255'],
             'invitation_body' => ['nullable', 'string'],
             'reminder_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'rsvp_deadline' => ['nullable', 'date'],
         ];
     }
 }

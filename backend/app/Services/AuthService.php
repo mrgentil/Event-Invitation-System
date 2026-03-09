@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Mail\ResetPasswordMail;
+use App\Models\EmailLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -81,7 +82,12 @@ class AuthService
             ['token' => Hash::make($token), 'created_at' => now()]
         );
 
-        Mail::to($email)->send(new ResetPasswordMail($resetUrl, 60));
+        try {
+            Mail::to($email)->send(new ResetPasswordMail($resetUrl, 60));
+            EmailLog::recordSent(EmailLog::TYPE_RESET_PASSWORD, $email, []);
+        } catch (\Throwable $e) {
+            EmailLog::recordFailed(EmailLog::TYPE_RESET_PASSWORD, $email, $e->getMessage(), []);
+        }
     }
 
     public function resetPassword(string $email, string $token, string $password): bool

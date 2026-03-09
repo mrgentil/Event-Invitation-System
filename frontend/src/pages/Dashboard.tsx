@@ -65,6 +65,13 @@ export default function Dashboard() {
           accent="emerald"
         />
         <KPICard
+          title="Personnes attendues"
+          value={stats.total_attendees ?? 0}
+          subtitle="Confirmés (avec +1)"
+          icon="✓"
+          accent="sky"
+        />
+        <KPICard
           title="Événements à venir"
           value={stats.upcoming_events}
           subtitle="À partir d'aujourd'hui"

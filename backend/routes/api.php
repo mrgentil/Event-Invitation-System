@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\EmailLogController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\RsvpController;
@@ -16,6 +17,8 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middle
 // Public RSVP (no auth)
 Route::get('/rsvp/{token}', [RsvpController::class, 'show']);
 Route::post('/rsvp/{token}', [RsvpController::class, 'respond']);
+Route::get('/rsvp/{token}/qr', [RsvpController::class, 'qr']);
+Route::get('/rsvp/{token}/calendar', [RsvpController::class, 'calendar']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -23,9 +26,11 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/user', [UserController::class, 'update']);
     Route::delete('/user', [UserController::class, 'destroy']);
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('email-logs', [EmailLogController::class, 'index']);
     Route::post('events', [EventController::class, 'store'])->middleware('throttle:10,1');
     Route::get('events', [EventController::class, 'index']);
     Route::get('events/{event}', [EventController::class, 'show']);
+    Route::get('events/{event}/email-logs', [EventController::class, 'emailLogs']);
     Route::put('events/{event}', [EventController::class, 'update']);
     Route::delete('events/{event}', [EventController::class, 'destroy']);
     Route::post('events/{event}/duplicate', [EventController::class, 'duplicate']);

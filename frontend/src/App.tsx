@@ -9,6 +9,9 @@ import EditEvent from './pages/EditEvent'
 import EventsList from './pages/EventsList'
 import EventDetail from './pages/EventDetail'
 import Profile from './pages/Profile'
+import Settings from './pages/Settings'
+import Statistics from './pages/Statistics'
+import EmailHistory from './pages/EmailHistory'
 import RsvpPage from './pages/RsvpPage'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
@@ -61,6 +64,9 @@ export default function App() {
         <Route path="events/:id" element={<EventDetail />} />
         <Route path="events/:id/edit" element={<EditEvent />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="statistics" element={<Statistics />} />
+        <Route path="email-history" element={<EmailHistory />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

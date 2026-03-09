@@ -33,6 +33,10 @@ class UserRepository implements UserRepositoryInterface
             unset($data['password']);
         }
 
+        if (isset($data['preferences']) && is_array($data['preferences'])) {
+            $data['preferences'] = array_merge($user->preferences ?? [], $data['preferences']);
+        }
+
         $user->update($data);
 
         return $user->fresh();
