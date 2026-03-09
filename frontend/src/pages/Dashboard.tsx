@@ -30,28 +30,20 @@ export default function Dashboard() {
 
   if (error || !stats) {
     return (
-      <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-red-700">
-        {error || 'Impossible de charger les statistiques.'}
+      <div className="page-container">
+        <div className="alert alert-error">{error || 'Impossible de charger les statistiques.'}</div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="page-container space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Bonjour, {user?.name}
-          </h1>
-          <p className="text-slate-600 mt-1">
-            Voici un aperçu de vos événements.
-          </p>
+          <h1 className="page-title">Bonjour, {user?.name}</h1>
+          <p className="page-subtitle">Voici un aperçu de vos événements.</p>
         </div>
-        <Link
-          to="/events/create"
-          className="inline-flex items-center justify-center px-4 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 shadow-sm transition-colors"
-        >
+        <Link to="/events/create" className="btn btn-primary btn-md">
           Créer un événement
         </Link>
       </div>

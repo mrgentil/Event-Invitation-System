@@ -21,6 +21,27 @@ class GuestRepository implements GuestRepositoryInterface
     {
         return Guest::query()
             ->where('event_id', $eventId)
+            ->orderBy('name')
             ->get();
+    }
+
+    public function findByToken(string $token): ?Guest
+    {
+        return Guest::query()
+            ->where('rsvp_token', $token)
+            ->with('event')
+            ->first();
+    }
+
+    public function update(Guest $guest, array $data): Guest
+    {
+        $guest->update($data);
+
+        return $guest->fresh();
+    }
+
+    public function delete(Guest $guest): bool
+    {
+        return $guest->delete();
     }
 }

@@ -192,30 +192,30 @@ export default function EventsList() {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Événements</h1>
-        <Link
-          to="/events/create"
-          className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700"
-        >
+    <div className="page-container">
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+        <div>
+          <h1 className="page-title">Événements</h1>
+          <p className="page-subtitle">Liste de vos événements avec recherche et filtres.</p>
+        </div>
+        <Link to="/events/create" className="btn btn-primary btn-md">
           Créer un événement
         </Link>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-4">
+      <div className="card overflow-hidden">
+        <div className="card-header flex flex-wrap items-center gap-4">
           <input
             type="search"
             placeholder="Rechercher (titre, lieu…)"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="px-3 py-2 border border-slate-300 rounded-lg w-56 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="form-input w-56 max-w-full"
           />
           <select
             value={dateFilter}
             onChange={(e) => { setDateFilter(e.target.value as 'all' | 'upcoming' | 'past'); setPage(1) }}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="form-input form-select w-40"
           >
             <option value="all">Tous</option>
             <option value="upcoming">À venir</option>
@@ -224,7 +224,7 @@ export default function EventsList() {
           <select
             value={sort}
             onChange={(e) => { setSort(e.target.value as ListEventsParams['sort']); setPage(1) }}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="form-input form-select w-48"
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -240,11 +240,9 @@ export default function EventsList() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
           </div>
         ) : events.length === 0 ? (
-          <div className="p-12 text-center text-slate-600">
+          <div className="card-body p-12 text-center text-slate-600">
             <p className="mb-4">Aucun événement trouvé.</p>
-            <Link to="/events/create" className="text-primary-600 font-medium hover:underline">
-              Créer un événement
-            </Link>
+            <Link to="/events/create" className="btn btn-primary btn-md">Créer un événement</Link>
           </div>
         ) : (
           <>
@@ -279,7 +277,7 @@ export default function EventsList() {
                   <select
                     value={perPage}
                     onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1) }}
-                    className="px-2 py-1 border border-slate-300 rounded text-sm"
+                    className="form-input form-select py-1.5 px-2 w-20 text-sm"
                   >
                     {PER_PAGE_OPTIONS.map((n) => (
                       <option key={n} value={n}>{n}</option>
@@ -291,18 +289,16 @@ export default function EventsList() {
                     type="button"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
-                    className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-secondary btn-sm"
                   >
                     Précédent
                   </button>
-                  <span className="text-sm text-slate-600">
-                    Page {pagination.current_page} / {pagination.last_page}
-                  </span>
+                  <span className="text-sm text-slate-600">Page {pagination.current_page} / {pagination.last_page}</span>
                   <button
                     type="button"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-secondary btn-sm"
                   >
                     Suivant
                   </button>

@@ -29,57 +29,55 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-100 px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Bon retour</h1>
-          <p className="text-slate-600 mb-6">Plateforme d'invitations aux événements</p>
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
-              {error}
+        <div className="card shadow-lg">
+          <div className="card-body p-8 sm:p-10">
+            <div className="text-center mb-8">
+              <h1 className="page-title text-3xl">Bon retour</h1>
+              <p className="page-subtitle">Connectez-vous à votre compte</p>
             </div>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-                Adresse email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                Mot de passe
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
-            >
-              {loading ? 'Connexion...' : 'Se connecter'}
-            </button>
-          </form>
-          <p className="mt-6 text-center text-slate-600 text-sm">
-            Vous n'avez pas de compte ?{' '}
-            <Link to="/register" className="text-primary-600 font-medium hover:underline">
-              S'inscrire
-            </Link>
-          </p>
+            {error && (
+              <div className="alert alert-error mb-6" role="alert">{error}</div>
+            )}
+            <form onSubmit={handleSubmit} className="form-section space-y-5">
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">Adresse email</label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="form-input"
+                  placeholder="vous@exemple.fr"
+                />
+              </div>
+              <div className="form-group">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="password" className="form-label">Mot de passe</label>
+                  <Link to="/forgot-password" className="text-sm text-primary-600 hover:underline">Mot de passe oublié ?</Link>
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  className="form-input"
+                  placeholder="••••••••"
+                />
+              </div>
+              <button type="submit" disabled={loading} className="btn btn-primary btn-lg w-full">
+                {loading ? 'Connexion...' : 'Se connecter'}
+              </button>
+            </form>
+            <p className="mt-8 text-center text-slate-600 text-sm">
+              Vous n'avez pas de compte ? <Link to="/register" className="font-medium text-primary-600 hover:underline">S'inscrire</Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

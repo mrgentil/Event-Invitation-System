@@ -46,6 +46,10 @@ export interface Event {
   time: string
   guests_count?: number
   guests?: Guest[]
+  guest_status_counts?: { pending: number; confirmed: number; declined: number }
+  invitation_subject?: string | null
+  invitation_body?: string | null
+  reminder_days?: number | null
   created_at: string
   updated_at: string
 }
@@ -55,6 +59,14 @@ export interface Guest {
   event_id: number
   name: string
   email: string
+  status?: 'pending' | 'confirmed' | 'declined'
+  attendees_count?: number | null
+  rsvp_message?: string | null
+}
+
+export interface RsvpInvitation {
+  guest: { name: string; status: string; attendees_count?: number | null; rsvp_message?: string | null }
+  event: { title: string; description: string | null; location: string | null; date: string; time: string }
 }
 
 export interface EventsPaginationMeta {
@@ -76,11 +88,14 @@ export interface ListEventsParams {
 }
 
 export const authApi = {
-  register: (data: { name: string; email: string; password: string; password_confirmation: string }) =>
+  register: (data: { name: string; email: string; password: string; password_confirmation: string; accept_terms?: boolean }) =>
     api.post<{ user: User; token: string }>('/register', data),
   login: (data: { email: string; password: string }) =>
     api.post<{ user: User; token: string }>('/login', data),
   logout: () => api.post('/logout'),
+  forgotPassword: (email: string) => api.post<{ message: string }>('/forgot-password', { email }),
+  resetPassword: (data: { email: string; token: string; password: string; password_confirmation: string }) =>
+    api.post<{ message: string }>('/reset-password', data),
   getProfile: () => api.get<{ data: User }>('/user'),
   updateProfile: (data: { name?: string; email?: string; password?: string; password_confirmation?: string }) =>
     api.put<{ data: User }>('/user', data),
@@ -98,6 +113,34 @@ export const eventsApi = {
     }),
   update: (id: number, data: Partial<Event>) => api.put<{ data: Event }>(`/events/${id}`, data),
   delete: (id: number) => api.delete(`/events/${id}`),
+  duplicate: (id: number, params?: { date_offset_days?: number; copy_guests?: boolean }) =>
+    api.post<{ data: Event }>(`/events/${id}/duplicate`, params ?? {}),
+}
+
+export const guestsApi = {
+  add: (eventId: number, data: { name: string; email: string; send_invitation?: boolean }) =>
+    api.post<{ data: Guest }>(`/events/${eventId}/guests`, data),
+  update: (eventId: number, guestId: number, data: { name?: string; email?: string }) =>
+    api.put<{ data: Guest }>(`/events/${eventId}/guests/${guestId}`, data),
+  delete: (eventId: number, guestId: number) =>
+    api.delete(`/events/${eventId}/guests/${guestId}`),
+  import: (eventId: number, file: File) => {
+    const form = new FormData()
+    form.append('guests_file', file)
+    return api.post<{ data: { count: number }; message?: string }>(`/events/${eventId}/guests/import`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  export: (eventId: number) =>
+    api.get<Blob>(`/events/${eventId}/guests/export`, { responseType: 'blob' }),
+  resend: (eventId: number, guestIds?: number[]) =>
+    api.post<{ data: { count: number }; message?: string }>(`/events/${eventId}/guests/resend`, { guest_ids: guestIds ?? [] }),
+}
+
+export const rsvpApi = {
+  get: (token: string) => api.get<{ data: RsvpInvitation }>(`/rsvp/${token}`),
+  respond: (token: string, data: { status: 'confirmed' | 'declined'; attendees_count?: number; rsvp_message?: string }) =>
+    api.post<{ data: Guest }>(`/rsvp/${token}`, data),
 }
 
 export interface DashboardStats {

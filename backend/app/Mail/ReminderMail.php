@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class InvitationMail extends Mailable
+class ReminderMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -21,20 +21,16 @@ class InvitationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $subject = $this->event->invitation_subject
-            ?: ('Invitation : ' . $this->event->title);
-
         return new Envelope(
-            subject: $subject,
+            subject: 'Rappel : ' . $this->event->title,
             from: config('mail.from.address'),
-            replyTo: [config('mail.from.address')],
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'emails.invitation',
+            view: 'emails.reminder',
         );
     }
 }

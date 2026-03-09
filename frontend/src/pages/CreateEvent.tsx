@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { eventsApi } from '../api'
 
 export default function CreateEvent() {
@@ -9,6 +10,9 @@ export default function CreateEvent() {
   const [location, setLocation] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
+  const [invitationSubject, setInvitationSubject] = useState('')
+  const [invitationBody, setInvitationBody] = useState('')
+  const [reminderDays, setReminderDays] = useState<number | ''>('')
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,6 +25,11 @@ export default function CreateEvent() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    const today = new Date().toISOString().slice(0, 10)
+    if (date && date < today) {
+      setError('La date ne peut pas être dans le passé')
+      return
+    }
     if (!file) {
       setError('Veuillez téléverser un fichier Excel avec les colonnes : nom, email')
       return
@@ -33,8 +42,12 @@ export default function CreateEvent() {
       formData.append('location', location)
       formData.append('date', date)
       formData.append('time', time)
+      if (invitationSubject) formData.append('invitation_subject', invitationSubject)
+      if (invitationBody) formData.append('invitation_body', invitationBody)
+      if (reminderDays !== '') formData.append('reminder_days', String(reminderDays))
       formData.append('guests_file', file)
       await eventsApi.create(formData)
+      toast.success('Événement créé et invitations envoyées')
       navigate('/events')
     } catch (err: unknown) {
       const ax = err as { response?: { data?: { errors?: Record<string, string[]> } } }
@@ -48,104 +61,72 @@ export default function CreateEvent() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Créer un événement</h1>
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
-          {error}
-        </div>
-      )}
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4 max-w-xl">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-1">
-            Titre *
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1">
-            Description
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="location" className="block text-sm font-medium text-slate-700 mb-1">
-            Lieu
-          </label>
-          <input
-            id="location"
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium text-slate-700 mb-1">
-              Date *
-            </label>
-            <input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
+    <div className="page-container">
+      <h1 className="page-title mb-2">Créer un événement</h1>
+      <p className="page-subtitle mb-8">Renseignez les détails puis importez la liste d'invités (Excel/CSV).</p>
+
+      {error && <div className="alert alert-error mb-6" role="alert">{error}</div>}
+
+      <form onSubmit={handleSubmit} className="card">
+        <div className="card-body space-y-6">
+          <div className="form-section-title">Informations générales</div>
+          <div className="form-section">
+            <div className="form-group">
+              <label htmlFor="title" className="form-label">Titre *</label>
+              <input id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="form-input" placeholder="Nom de l'événement" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="description" className="form-label">Description</label>
+              <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="form-textarea" placeholder="Description optionnelle" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="location" className="form-label">Lieu</label>
+              <input id="location" type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="form-input" placeholder="Adresse ou lieu" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="form-group">
+                <label htmlFor="date" className="form-label">Date *</label>
+                <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required className="form-input" />
+              </div>
+              <div className="form-group">
+                <label htmlFor="time" className="form-label">Heure *</label>
+                <input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required className="form-input" />
+              </div>
+            </div>
           </div>
-          <div>
-            <label htmlFor="time" className="block text-sm font-medium text-slate-700 mb-1">
-              Heure *
-            </label>
-            <input
-              id="time"
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              required
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
+
+          <div className="form-section-title">Email d'invitation (optionnel)</div>
+          <div className="form-section">
+            <div className="form-group">
+              <label htmlFor="invitation_subject" className="form-label form-label-optional">Sujet de l'email</label>
+              <input id="invitation_subject" type="text" value={invitationSubject} onChange={(e) => setInvitationSubject(e.target.value)} className="form-input" placeholder="Par défaut : Invitation : [titre]" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="invitation_body" className="form-label form-label-optional">Corps du message</label>
+              <textarea id="invitation_body" value={invitationBody} onChange={(e) => setInvitationBody(e.target.value)} rows={3} className="form-textarea" placeholder="Laissez vide pour le message par défaut" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="reminder_days" className="form-label form-label-optional">Rappel automatique (jours avant)</label>
+              <input id="reminder_days" type="number" min={1} max={365} value={reminderDays} onChange={(e) => setReminderDays(e.target.value === '' ? '' : parseInt(e.target.value, 10))} className="form-input" placeholder="Ex. 3" />
+            </div>
+          </div>
+
+          <div className="form-section-title">Liste d'invités</div>
+          <div className="form-section">
+            <div className="form-group">
+              <label className="form-label">Fichier Excel / CSV *</label>
+              <p className="form-hint mb-2">Colonnes attendues : <strong>nom</strong> (ou Nom), <strong>email</strong>. Les invitations seront envoyées après création.</p>
+              <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="form-file" />
+              {file && <p className="form-hint mt-2">Fichier sélectionné : {file.name}</p>}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-200">
+            <button type="submit" disabled={loading} className="btn btn-primary btn-lg w-full">
+              {loading ? 'Création et envoi des invitations...' : 'Créer l\'événement et envoyer les invitations'}
+            </button>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Invités (fichier Excel) *
-          </label>
-          <p className="text-xs text-slate-500 mb-2">
-            Téléversez un fichier Excel (.xlsx, .xls, .csv) avec les colonnes : <strong>nom</strong>, <strong>email</strong>
-          </p>
-          <input
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={handleFileChange}
-            className="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-          />
-          {file && <p className="mt-1 text-sm text-slate-600">Selected: {file.name}</p>}
-        </div>
-        <p className="text-sm text-slate-600">
-          Après la création, les invitations seront envoyées par email à tous les invités du fichier.
-        </p>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 px-4 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
-        >
-          {loading ? 'Création et envoi des invitations...' : 'Créer l\'événement et envoyer les invitations'}
-        </button>
       </form>
     </div>
   )

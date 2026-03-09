@@ -8,6 +8,7 @@ use App\Http\Requests\Api\RegisterRequest;
 use App\Services\AuthService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
@@ -48,5 +49,34 @@ class AuthController extends Controller
         $this->authService->logout();
 
         return $this->success(null, 'Déconnexion réussie');
+    }
+
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate(['email' => ['required', 'email']]);
+        $this->authService->forgotPassword($request->input('email'));
+
+        return $this->success(null, 'Si cet email est associé à un compte, un lien de réinitialisation a été envoyé.');
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'token' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $ok = $this->authService->resetPassword(
+            $validated['email'],
+            $validated['token'],
+            $validated['password']
+        );
+
+        if (! $ok) {
+            return $this->error('Lien invalide ou expiré.', 400);
+        }
+
+        return $this->success(null, 'Mot de passe réinitialisé. Vous pouvez vous connecter.');
     }
 }

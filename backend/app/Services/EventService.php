@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\Repositories\EventRepositoryInterface;
 use App\Contracts\Repositories\GuestRepositoryInterface;
+use App\Mail\EventCreatedMail;
 use App\Mail\InvitationMail;
 use App\Models\Event;
 use App\Models\User;
@@ -52,6 +53,8 @@ class EventService
         $this->sendInvitations($event, $guests);
         $event->load('guests');
 
+        Mail::to($user->email)->send(new EventCreatedMail($event, count($guests)));
+
         return $event;
     }
 
@@ -63,6 +66,31 @@ class EventService
     public function deleteEvent(Event $event): bool
     {
         return $this->eventRepository->delete($event);
+    }
+
+    /**
+     * Duplicate an event (optionally shift date and copy guests).
+     */
+    public function duplicateEvent(User $user, Event $event, int $dateOffsetDays = 7, bool $copyGuests = true): Event
+    {
+        $newDate = Carbon::parse($event->date)->addDays($dateOffsetDays);
+
+        $data = $event->only([
+            'title', 'description', 'location', 'invitation_subject', 'invitation_body', 'reminder_days',
+        ]);
+        $data['title'] = $event->title . ' (copie)';
+        $data['date'] = $newDate->format('Y-m-d');
+        $data['time'] = $event->time;
+
+        $newEvent = $this->eventRepository->create($user, $data);
+
+        if ($copyGuests) {
+            foreach ($event->guests as $guest) {
+                $this->guestRepository->createForEvent($newEvent->id, $guest->name, $guest->email);
+            }
+        }
+
+        return $newEvent->load('guests');
     }
 
     /**

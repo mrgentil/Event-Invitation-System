@@ -68,103 +68,61 @@ export default function Profile() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Mon profil</h1>
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
-      )}
-      {success && (
-        <div className="mb-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm">{success}</div>
-      )}
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4 max-w-xl mb-8">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">Nom</label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Adresse email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-            Nouveau mot de passe (laisser vide pour conserver l'actuel)
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="password_confirmation" className="block text-sm font-medium text-slate-700 mb-1">
-            Confirmer le nouveau mot de passe
-          </label>
-          <input
-            id="password_confirmation"
-            type="password"
-            value={passwordConfirmation}
-            onChange={(e) => setPasswordConfirmation(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50"
-        >
-          {loading ? 'Enregistrement...' : 'Enregistrer le profil'}
-        </button>
-      </form>
+    <div className="page-container">
+      <h1 className="page-title mb-2">Mon profil</h1>
+      <p className="page-subtitle mb-8">Gérez vos informations personnelles.</p>
 
-      <div className="bg-white rounded-xl border border-red-200 p-6 max-w-xl">
-        <h2 className="font-semibold text-slate-900 mb-2">Zone de danger</h2>
-        <p className="text-sm text-slate-600 mb-4">
-          La suppression de votre compte supprimera tous vos événements et invités. Cette action est irréversible.
-        </p>
-        {!showDeleteConfirm ? (
-          <button
-            type="button"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700"
-          >
-            Supprimer mon compte
-          </button>
-        ) : (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-600">Êtes-vous sûr ?</span>
-            <button
-              type="button"
-              onClick={handleDeleteAccount}
-              disabled={deleteLoading}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
-            >
-              {deleteLoading ? 'Suppression...' : 'Oui, supprimer le compte'}
+      {error && <div className="alert alert-error mb-6" role="alert">{error}</div>}
+      {success && <div className="alert alert-success mb-6" role="status">{success}</div>}
+
+      <div className="card mb-8">
+        <div className="card-body">
+          <h2 className="form-section-title">Informations du compte</h2>
+          <form onSubmit={handleSubmit} className="form-section space-y-5">
+            <div className="form-group">
+              <label htmlFor="name" className="form-label">Nom</label>
+              <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required className="form-input" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">Adresse email</label>
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="form-input" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="password" className="form-label">Nouveau mot de passe</label>
+              <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="form-input" placeholder="Laisser vide pour ne pas changer" />
+              <p className="form-hint mt-1">Minimum 8 caractères</p>
+            </div>
+            <div className="form-group">
+              <label htmlFor="password_confirmation" className="form-label">Confirmer le nouveau mot de passe</label>
+              <input id="password_confirmation" type="password" value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} className="form-input" />
+            </div>
+            <button type="submit" disabled={loading} className="btn btn-primary btn-md">
+              {loading ? 'Enregistrement...' : 'Enregistrer le profil'}
             </button>
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(false)}
-              className="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50"
-            >
-              Annuler
+          </form>
+        </div>
+      </div>
+
+      <div className="card border-red-200 bg-red-50/30">
+        <div className="card-body">
+          <h2 className="font-semibold text-slate-900 mb-1">Zone de danger</h2>
+          <p className="text-sm text-slate-600 mb-4">La suppression de votre compte supprimera tous vos événements et invités. Cette action est irréversible.</p>
+          {!showDeleteConfirm ? (
+            <button type="button" onClick={() => setShowDeleteConfirm(true)} className="btn btn-danger btn-md">
+              Supprimer mon compte
             </button>
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-slate-600">Êtes-vous sûr ?</span>
+              <button type="button" onClick={handleDeleteAccount} disabled={deleteLoading} className="btn btn-danger btn-md">
+                {deleteLoading ? 'Suppression...' : 'Oui, supprimer le compte'}
+              </button>
+              <button type="button" onClick={() => setShowDeleteConfirm(false)} className="btn btn-secondary btn-md">
+                Annuler
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

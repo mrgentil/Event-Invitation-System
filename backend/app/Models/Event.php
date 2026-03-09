@@ -18,6 +18,9 @@ class Event extends Model
         'location',
         'date',
         'time',
+        'invitation_subject',
+        'invitation_body',
+        'reminder_days',
     ];
 
     protected function casts(): array

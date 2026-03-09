@@ -3,9 +3,14 @@
 namespace App\Services;
 
 use App\Contracts\Repositories\UserRepositoryInterface;
+use App\Mail\ResetPasswordMail;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Mail;
 
 class AuthService
 {
@@ -58,6 +63,46 @@ class AuthService
     {
         Auth::guard('api')->logout();
         $this->userRepository->delete($user);
+    }
+
+    public function forgotPassword(string $email): void
+    {
+        $user = User::query()->where('email', $email)->first();
+        if (! $user) {
+            return; // Don't reveal if email exists
+        }
+
+        $token = Str::random(64);
+        $frontendUrl = rtrim(config('app.frontend_url'), '/');
+        $resetUrl = $frontendUrl . '/reset-password?token=' . urlencode($token) . '&email=' . urlencode($email);
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $email],
+            ['token' => Hash::make($token), 'created_at' => now()]
+        );
+
+        Mail::to($email)->send(new ResetPasswordMail($resetUrl, 60));
+    }
+
+    public function resetPassword(string $email, string $token, string $password): bool
+    {
+        $record = DB::table('password_reset_tokens')->where('email', $email)->first();
+        if (! $record || ! Hash::check($token, $record->token)) {
+            return false;
+        }
+        if (now()->diffInMinutes($record->created_at) > 60) {
+            return false;
+        }
+
+        $user = User::query()->where('email', $email)->first();
+        if (! $user) {
+            return false;
+        }
+
+        $user->update(['password' => Hash::make($password)]);
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+        return true;
     }
 
     /**

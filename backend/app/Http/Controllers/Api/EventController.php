@@ -61,7 +61,13 @@ class EventController extends Controller
         $this->authorize('view', $event);
         $event->load('guests');
 
-        return $this->success($event);
+        $guestStatusCounts = [
+            'pending' => $event->guests->where('status', 'pending')->count(),
+            'confirmed' => $event->guests->where('status', 'confirmed')->count(),
+            'declined' => $event->guests->where('status', 'declined')->count(),
+        ];
+
+        return $this->success(array_merge($event->toArray(), ['guest_status_counts' => $guestStatusCounts]));
     }
 
     public function update(UpdateEventRequest $request, Event $event): JsonResponse
@@ -77,5 +83,22 @@ class EventController extends Controller
         $this->eventService->deleteEvent($event);
 
         return $this->noContent();
+    }
+
+    public function duplicate(\Illuminate\Http\Request $request, Event $event): JsonResponse
+    {
+        $this->authorize('view', $event);
+
+        $validated = $request->validate([
+            'date_offset_days' => ['integer', 'min:1', 'max:365'],
+            'copy_guests' => ['boolean'],
+        ]);
+
+        $offsetDays = (int) ($validated['date_offset_days'] ?? 7);
+        $copyGuests = $request->boolean('copy_guests', true);
+
+        $newEvent = $this->eventService->duplicateEvent($request->user(), $event, $offsetDays, $copyGuests);
+
+        return $this->created($newEvent, 'Événement dupliqué.');
     }
 }

@@ -23,6 +23,9 @@ class StoreEventRequest extends FormRequest
             'date' => ['required', 'date'],
             'time' => ['required', 'date_format:H:i'],
             'guests_file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+            'invitation_subject' => ['nullable', 'string', 'max:255'],
+            'invitation_body' => ['nullable', 'string'],
+            'reminder_days' => ['nullable', 'integer', 'min:1', 'max:365'],
         ];
     }
 }

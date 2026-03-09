@@ -22,6 +22,9 @@ class UpdateEventRequest extends FormRequest
             'location' => ['nullable', 'string', 'max:255'],
             'date' => ['sometimes', 'date'],
             'time' => ['sometimes', 'date_format:H:i'],
+            'invitation_subject' => ['nullable', 'string', 'max:255'],
+            'invitation_body' => ['nullable', 'string'],
+            'reminder_days' => ['nullable', 'integer', 'min:1', 'max:365'],
         ];
     }
 }
